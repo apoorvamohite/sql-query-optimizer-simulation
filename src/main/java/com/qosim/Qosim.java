@@ -14,9 +14,8 @@ import net.sf.jsqlparser.statement.create.index.CreateIndex;
 import java.util.List;
 import net.sf.jsqlparser.JSQLParserException;
 import java.io.File;
-import java.util.Scanner;
-import java.util.ArrayList;
-import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.FileWriter;
 
 /**
  *
@@ -29,17 +28,11 @@ public class Qosim {
         for (String sql : statements) {
             try {
                 Statement stmt = (Statement) CCJSqlParserUtil.parse(sql);
-                System.out.println("className");
                 String className = stmt.getClass().getSimpleName();
-                System.out.println("className" + className);
                 switch (className) {
                     case "CreateIndex":
-                        System.out.println(className);
                         CreateIndex ci = (CreateIndex) stmt;
-                        System.out.println(className);
-                        System.out.println(ci.getIndex());
-                        System.out.println(ci.getTable());
-                        System.out.println(ci.getIndex().getColumns());
+                        createIndex(ci);
                         break;
                     case "Select":
                         System.out.println(className);
@@ -72,9 +65,39 @@ public class Qosim {
                     DbIndex.getAllIndexes(tableName);
                 }
             } catch (Exception e) {
-                System.out.println("There was an exception!" + e.getMessage() + e.getCause());
+                throw e;
             }
         }
 
+    }
+
+    protected static void createIndex(CreateIndex ci) {
+        String fileName = ci.getTable().getName()+ ci.getIndex().getName();
+        File idxFile = new File(DbConstants.DB_INDEXES_DIR_PATH+fileName+DbConstants.DB_INDEX_FILE_EXT);
+        DbIndex idx = new DbIndex(ci.getTable().getName(), ci.getIndex().getColumnsNames());
+        try{
+            if (idxFile.createNewFile()) {
+                System.out.println("File created: " + idxFile.getName());
+                FileWriter writer = new FileWriter(idxFile);
+                List<Integer> indexColumns = idx.getIndexColumns();
+                List<Character> indexColumnOrder = idx.getIndexColumnOrder();
+                String header="";
+                System.out.println("indexColumns.size()"+indexColumns.size());
+                for(Integer j=0; j<indexColumns.size(); j++){
+                    header+=(indexColumns.get(j).toString() + indexColumnOrder.get(j).toString()+",");
+                }
+                writer.append(header.substring(0, header.length()-1)+"\n");
+                List<DbIndex.DbIndexEntry> idxData = idx.getIndexData();
+                writer.append(String.valueOf(idxData.size())+"\n");
+                for(DbIndex.DbIndexEntry dbe : idxData){
+                    writer.append(dbe.getRID() + "," + dbe.getKey() + "\n");
+                }
+                writer.close();
+            } else {
+                System.out.println("File already exists.");
+            }
+        } catch (IOException e){
+            System.out.println("There was an exception!" + e.getMessage() + e.getCause());
+        }
     }
 }

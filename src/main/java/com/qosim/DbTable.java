@@ -23,6 +23,7 @@ public class DbTable {
     private List<Integer> columnCardinality;
     private Integer numRows;
     private Map<Integer, List> data;
+    private Map<Integer, ColumnDefinition> columnDefn;
     
     
     protected DbTable(String fileName){
@@ -33,11 +34,29 @@ public class DbTable {
         return numColumns;
     }
     
+    protected Integer getNumRows(){
+        return numRows;
+    }
+    
+    protected Character getColumnType(Integer i){
+        return columnType.get(i);
+    }
+    
+    protected ColumnDefinition getColumnDefn(Integer i){
+        return columnDefn.get(i);
+    }
+    
+    protected Map<Integer, List> getData(){
+        return data;
+    }
+    
     private void readTableFromFile(String fileName){
         columnType = new ArrayList<Character>();
         columnLength = new ArrayList<Integer>();
         columnCardinality = new ArrayList<Integer>();
         data = new HashMap<Integer, List>();
+        columnDefn = new HashMap<Integer, ColumnDefinition>();
+        
         List<String> lines = DbUtil.readFileLines(DbConstants.DB_TABLES_DIR_PATH + fileName + ".tab");
         Integer columnNo = 1;
         
@@ -46,9 +65,12 @@ public class DbTable {
         for(String colType: dataTypes){
             columnType.add(colType.charAt(0));
             if(colType.charAt(0) == DbConstants.CHAR_DATA_TYPE){
-                columnLength.add(Integer.parseInt(colType.substring(1)));
+                Integer length = Integer.parseInt(colType.substring(1));
+                columnDefn.put(columnNo, new ColumnDefinition(DbConstants.CHAR_DATA_TYPE, length));
+                columnLength.add(length);
                 data.put(columnNo++, new ArrayList<String>());
             } else {
+                columnDefn.put(columnNo, new ColumnDefinition(DbConstants.INT_DATA_TYPE, 0));
                 columnLength.add(0);
                 data.put(columnNo++, new ArrayList<Integer>());
             }
@@ -76,6 +98,24 @@ public class DbTable {
                 }
                 curColumn++;
             }
+        }
+    }
+    
+    protected class ColumnDefinition{
+        private Character dataType;
+        private Integer dataLength;
+        
+        protected Integer getDataLength(){
+            return this.dataLength;
+        }
+        
+        protected Character getDataType(){
+            return this.dataType;
+        }
+        
+        protected ColumnDefinition(Character dataType, Integer length){
+            this.dataLength = length;
+            this.dataType = dataType;
         }
     }
 }
