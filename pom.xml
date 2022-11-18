@@ -56,9 +56,16 @@
             <version>3.12.0</version>
         </dependency>
         <dependency>
-            <groupId>io.bretty</groupId>
-            <artifactId>console-table-builder</artifactId>
-            <version>1.2</version>
+            <groupId>com.github.skebir</groupId>
+            <artifactId>prettytable</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>jitpack</id>
+            <name>jitpackio</name>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 </project>

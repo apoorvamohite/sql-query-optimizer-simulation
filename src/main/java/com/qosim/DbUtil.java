@@ -4,9 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-//import io.bretty.console.table.Table;
-import io.bretty.console.table.ColumnFormatter;
-import io.bretty.console.table.Alignment;
 import net.sf.jsqlparser.statement.create.index.CreateIndex;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.schema.Table;
@@ -15,6 +12,7 @@ import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.expression.operators.conditional.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;
+import org.sk.PrettyTable;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -43,21 +41,11 @@ public class DbUtil {
     }
 
     protected static void formatTable(List<List<String>> arr) {
-        int[] lengths = new int[arr.get(0).size()];
-        
-        for (Integer i=0; i<arr.size(); i++) {
-            for(Integer j=0; j<arr.get(i).size(); j++){
-                lengths[j] = Math.max(lengths[j], arr.get(i).get(j).length());
-            }
+        PrettyTable table = new PrettyTable(arr.get(0).toArray(new String[0]));
+        for (int x=1; x<arr.size(); x++) {
+            table.addRow(arr.get(x).toArray(new String[0]));
         }
-        Integer i = 0;
-        for (List<String> row : arr) {
-            i=0;
-            for (String val : row) {
-                System.out.print(centerString(lengths[i++], val) + "|");
-            }
-            System.out.print("\n");
-        }
+        System.out.println(table);
     }
 
     //https://stackoverflow.com/questions/8154366/how-to-center-a-string-using-string-format
@@ -159,4 +147,5 @@ public class DbUtil {
             return;
         }
     }
+    
 }

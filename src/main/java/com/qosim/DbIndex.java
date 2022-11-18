@@ -148,7 +148,7 @@ public class DbIndex {
         }
     }
 
-    protected static void getAllIndexes(String tableName, Boolean showHighLowKey) {
+    protected static List<DbIndex> getAllIndexes(String tableName, Boolean showHighLowKey) {
         File folder = new File(DbConstants.DB_INDEXES_DIR_PATH);
         File[] listOfFiles = folder.listFiles(new FilenameFilter() {
             @Override
@@ -169,6 +169,7 @@ public class DbIndex {
             indexTable.get(0).add("High Key");
             indexTable.get(0).add("Low Key");
         }
+        List<DbIndex> fullList = new ArrayList<DbIndex>();
         int j = 1;
         for (File file : listOfFiles) {
             DbIndex idx = new DbIndex(file.getName().replace(DbConstants.DB_INDEX_FILE_EXT, ""));
@@ -180,9 +181,11 @@ public class DbIndex {
                 indexTable.get(j).add(idx.getHighKey());
                 indexTable.get(j).add(idx.getLowKey());
             }
+            fullList.add(idx);
             j++;
         }
         DbUtil.formatTable(indexTable);
+        return fullList;
     }
 
     protected static void printAllIndexNames() {

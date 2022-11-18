@@ -25,9 +25,12 @@ public class DbTable {
     private Map<Integer, List> data;
     private Map<Integer, ColumnDefinition> columnDefn;
     
-    
     protected DbTable(String fileName){
-        readTableFromFile(fileName);
+        readTableFromFile(fileName, false);
+    }
+    
+    protected DbTable(String fileName, Boolean statisticsOnly){
+        readTableFromFile(fileName, statisticsOnly);
     }
     
     protected Integer getNumColumns(){
@@ -50,7 +53,11 @@ public class DbTable {
         return data;
     }
     
-    private void readTableFromFile(String fileName){
+    protected Integer getColumnCardinality(Integer column){
+        return this.columnCardinality.get(column - 1);
+    }
+    
+    private void readTableFromFile(String fileName, Boolean statisticsOnly){
         columnType = new ArrayList<Character>();
         columnLength = new ArrayList<Integer>();
         columnCardinality = new ArrayList<Integer>();
@@ -85,6 +92,10 @@ public class DbTable {
         
         // Read numRows
         numRows = Integer.parseInt(lines.get(2));
+        
+        if(statisticsOnly){
+            return;
+        }
         
         for(Integer i = 0; i<numRows; i++){
             String dataRow = lines.get(i+3);
