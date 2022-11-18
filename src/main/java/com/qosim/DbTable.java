@@ -61,7 +61,7 @@ public class DbTable {
         Integer columnNo = 1;
         
         // Read Datatypes
-        String[] dataTypes = lines.get(0).split(",");
+        String[] dataTypes = lines.get(0).split(" ");
         for(String colType: dataTypes){
             columnType.add(colType.charAt(0));
             if(colType.charAt(0) == DbConstants.CHAR_DATA_TYPE){
@@ -70,33 +70,33 @@ public class DbTable {
                 columnLength.add(length);
                 data.put(columnNo++, new ArrayList<String>());
             } else {
-                columnDefn.put(columnNo, new ColumnDefinition(DbConstants.INT_DATA_TYPE, 0));
-                columnLength.add(0);
+                columnDefn.put(columnNo, new ColumnDefinition(DbConstants.INT_DATA_TYPE, DbConstants.INT_DATA_LENGTH));
+                columnLength.add(DbConstants.INT_DATA_LENGTH);
                 data.put(columnNo++, new ArrayList<Integer>());
             }
         }
         
         numColumns = columnType.size();
-        
         // Read Cardinalities
-        String[] cardinality = lines.get(1).split(",");
+        String[] cardinality = lines.get(1).split(" ");
         for(String card: cardinality){
             columnCardinality.add(Integer.parseInt(card));
         }
         
         // Read numRows
         numRows = Integer.parseInt(lines.get(2));
-        Integer curColumn = 0;
+        
         for(Integer i = 0; i<numRows; i++){
-            String[] dataRow = lines.get(i+3).split(",");
-            curColumn = 0;
-            for(String s: dataRow){
+            String dataRow = lines.get(i+3);
+            Integer lastColumnEnd = 0;
+            for(Integer curColumn=0; curColumn<numColumns; curColumn++){
+                String s = dataRow.substring(lastColumnEnd, lastColumnEnd + columnLength.get(curColumn));
+                lastColumnEnd += columnLength.get(curColumn);
                 if(columnType.get(curColumn) == DbConstants.CHAR_DATA_TYPE){
                     data.get(curColumn+1).add(s);
                 } else if(columnType.get(curColumn) == DbConstants.INT_DATA_TYPE){
                     data.get(curColumn+1).add(Integer.parseInt(s));
                 }
-                curColumn++;
             }
         }
     }

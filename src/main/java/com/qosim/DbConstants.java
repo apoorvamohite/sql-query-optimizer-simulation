@@ -18,5 +18,5 @@ public class DbConstants {
     protected final static char INT_DATA_TYPE = 'I';
     protected final static char ASC_COL = 'A';
     protected final static char DESC_COL = 'D';
-    
+    protected final static int INT_DATA_LENGTH = 9;
 }

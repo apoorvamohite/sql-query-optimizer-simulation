@@ -16,6 +16,7 @@ import net.sf.jsqlparser.JSQLParserException;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
+import java.util.ArrayList;
 
 /**
  *
@@ -27,41 +28,31 @@ public class Qosim {
         List<String> statements = DbUtil.readFileLines(args[0]);
         for (String sql : statements) {
             try {
+                sql = DbUtil.preprocessSql(sql);
                 Statement stmt = (Statement) CCJSqlParserUtil.parse(sql);
                 String className = stmt.getClass().getSimpleName();
                 switch (className) {
                     case "CreateIndex":
+                        // TODO: Formatting
                         CreateIndex ci = (CreateIndex) stmt;
+                        DbUtil.postprocessSql(ci);
                         createIndex(ci);
                         break;
                     case "Select":
-                        System.out.println(className);
                         PlainSelect sel = (PlainSelect) ((Select) stmt).getSelectBody();
-                        System.out.println(sel.getSelectItems().get(0));
+                        DbUtil.postprocessSql(sel);
+                        System.out.println("after post process"+ sel.getSelectItems());
                         break;
                     case "Drop":
-                        System.out.println(className);
+                        Drop drop = (Drop) stmt;
+                        dropIndex(drop);
                         break;
                     default:
                         System.out.println("this is default");
                 }
-
-
-                /*System.out.println(stmt);
-                TablesNamesFinder tablesNamesFinder = new TablesNamesFinder();
-                List<String> tableNames = tablesNamesFinder.getTableList(stmt);
-                for (String tableName : tableNames) {
-                    System.out.println(tableName);
-                }
-                PlainSelect ps = (PlainSelect) stmt.getSelectBody();
-                System.out.println(ps.getSelectItems());
-                System.out.println(ps.getFromItem());
-                System.out.println(ps.getJoins());
-                System.out.println(ps.getWhere());*/
             } catch (JSQLParserException pex) {
-                if (sql.startsWith("LIST INDEX")) {
-                    String tableName = sql.split(" ")[2];
-                    System.out.println("List index on " + tableName);
+                if (sql.toUpperCase().startsWith("LIST INDEX")) {
+                    String tableName = sql.split(" ")[2].replace("_", "");
                     DbIndex.getAllIndexes(tableName);
                 }
             } catch (Exception e) {
@@ -71,32 +62,40 @@ public class Qosim {
 
     }
 
+    protected static void dropIndex(Drop drop) {
+        String fileName = drop.getName().getName();
+        File idxFile = new File(DbConstants.DB_INDEXES_DIR_PATH + fileName + DbConstants.DB_INDEX_FILE_EXT);
+        if (idxFile.delete()) {
+            System.out.println("DROP INDEX SUCCESS: " + fileName);
+        } else {
+            System.out.println("DROP INDEX FAILED");
+        }
+    }
+
     protected static void createIndex(CreateIndex ci) {
-        String fileName = ci.getTable().getName()+ ci.getIndex().getName();
-        File idxFile = new File(DbConstants.DB_INDEXES_DIR_PATH+fileName+DbConstants.DB_INDEX_FILE_EXT);
+        String fileName = ci.getTable().getName() + ci.getIndex().getName();
+        File idxFile = new File(DbConstants.DB_INDEXES_DIR_PATH + fileName + DbConstants.DB_INDEX_FILE_EXT);
         DbIndex idx = new DbIndex(ci.getTable().getName(), ci.getIndex().getColumnsNames());
-        try{
+        try {
             if (idxFile.createNewFile()) {
-                System.out.println("File created: " + idxFile.getName());
                 FileWriter writer = new FileWriter(idxFile);
                 List<Integer> indexColumns = idx.getIndexColumns();
                 List<Character> indexColumnOrder = idx.getIndexColumnOrder();
-                String header="";
-                System.out.println("indexColumns.size()"+indexColumns.size());
-                for(Integer j=0; j<indexColumns.size(); j++){
-                    header+=(indexColumns.get(j).toString() + indexColumnOrder.get(j).toString()+",");
+                String header = "";
+                for (Integer j = 0; j < indexColumns.size(); j++) {
+                    header += (indexColumns.get(j).toString() + indexColumnOrder.get(j).toString() + ",");
                 }
-                writer.append(header.substring(0, header.length()-1)+"\n");
+                writer.append(header.substring(0, header.length() - 1) + "\n");
                 List<DbIndex.DbIndexEntry> idxData = idx.getIndexData();
-                writer.append(String.valueOf(idxData.size())+"\n");
-                for(DbIndex.DbIndexEntry dbe : idxData){
-                    writer.append(dbe.getRID() + "," + dbe.getKey() + "\n");
+                writer.append(String.valueOf(idxData.size()) + "\n");
+                for (DbIndex.DbIndexEntry dbe : idxData) {
+                    writer.append(dbe.getRID() + " '" + dbe.getKey() + "'\n");
                 }
                 writer.close();
             } else {
                 System.out.println("File already exists.");
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             System.out.println("There was an exception!" + e.getMessage() + e.getCause());
         }
     }

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 import java.util.Comparator;
+import org.apache.commons.lang3.StringUtils;
 
 public class DbIndex {
 
@@ -70,43 +71,35 @@ public class DbIndex {
         for (Integer row = 0; row < table.getNumRows(); row++) {
             String key = "";
             List<String> indexKeyValues = new ArrayList<String>();
+            List<DbTable.ColumnDefinition> colDefinitions = new ArrayList<DbTable.ColumnDefinition>();
             for (Integer j = 0; j < columns.size(); j++) {
                 String colDefn = columns.get(j);
-                colDefn = colDefn.replaceAll("\"", "");
                 Character order = colDefn.charAt(colDefn.length() - 1);
                 Integer columnNum = Integer.parseInt(colDefn.substring(0, colDefn.length() - 1));
 
-                if (table.getColumnDefn(columnNum).getDataType() == DbConstants.INT_DATA_TYPE && order == DbConstants.DESC_COL) {
-                    key += (999999999 - (int) tableData.get(columnNum).get(row));
-                    indexKeyValues.add(Integer.toString((int) tableData.get(columnNum).get(row)));
-                } else {
-                    key += tableData.get(columnNum).get(row);
-                    indexKeyValues.add(String.valueOf(tableData.get(columnNum).get(row)));
-                }
+                indexKeyValues.add(tableData.get(columnNum).get(row).toString());
+                colDefinitions.add(table.getColumnDefn(columnNum));
+
+                // TODO: take this out
                 if (row == 0) {
                     indexColumns.add(columnNum);
                     indexColumnOrder.add(order);
                     ordering[j] = (order == DbConstants.ASC_COL ? 1 : -1);
                 }
             }
-            indexData.add(new DbIndexEntry(row, key, indexKeyValues));
+            indexData.add(new DbIndexEntry(row, key, indexKeyValues, colDefinitions, indexColumnOrder));
         }
         // Sort index key
         Collections.sort(indexData, new Comparator<DbIndexEntry>() {
             @Override
             public int compare(final DbIndexEntry lhs, DbIndexEntry rhs) {
-                Integer len = lhs.getIndexKeyValues().size();
-                Integer count = 0;
-                while (count < len) {
-                    if (lhs.getIndexKeyValues().get(count).compareTo(rhs.getIndexKeyValues().get(count)) > 0) {
-                        return 1 * ordering[count];
-                    } else if (lhs.getIndexKeyValues().get(count).compareTo(rhs.getIndexKeyValues().get(count)) < 0) {
-                        return -1 * ordering[count];
-                    } else {
-                        count++;
-                    }
+                if (lhs.getKey().compareTo(rhs.getKey()) > 0) {
+                    return 1;
+                } else if (lhs.getKey().compareTo(rhs.getKey()) < 0) {
+                    return -1;
+                } else {
+                    return 0;
                 }
-                return 0;
             }
         });
     }
@@ -141,7 +134,7 @@ public class DbIndex {
         // Read Index Data
         Integer curColumn = 0;
         for (Integer i = 0; i < numIndexKeys; i++) {
-            String[] dataRow = lines.get(i + 2).split(",");
+            String[] dataRow = lines.get(i + 2).split(" ", 2);
             curColumn = 0;
             indexData.add(new DbIndexEntry(Integer.parseInt(dataRow[0]), dataRow[1]));
         }
@@ -163,6 +156,7 @@ public class DbIndex {
         List<List<String>> indexTable = new ArrayList<List<String>>();
         indexTable.add(new ArrayList<>(List.of("Index Name")));
 
+        // TODO: No need to read data. Just column definition
         DbTable tab = new DbTable(tableName);
         for (Integer i = 1; i <= tab.getNumColumns(); i++) {
             indexTable.get(0).add(i.toString() + (i == 1 ? "st" : i == 2 ? "nd" : i == 3 ? "rd" : "th") + " Column");
@@ -216,9 +210,39 @@ public class DbIndex {
             this.indexKeyValues = indexKeyValues;
         }
 
+        protected DbIndexEntry(Integer rid, String key, List<String> indexKeyValues, List<DbTable.ColumnDefinition> colDefn, List<Character> order) {
+            this.RID = rid;
+            this.key = this.generateKey(indexKeyValues, colDefn, order);
+            this.indexKeyValues = indexKeyValues;
+        }
+
         protected DbIndexEntry(Integer rid, String key) {
             this.RID = rid;
             this.key = key;
+        }
+
+        private String generateKey(List<String> indexKeyValues, List<DbTable.ColumnDefinition> colDefinitions, List<Character> order) {
+            String res = "";
+            Integer curCol = 0;
+            StringBuilder sb = new StringBuilder();
+            for (DbTable.ColumnDefinition colDefn : colDefinitions) {
+                // TODO:handle ordering, use StringBuilder
+                if (colDefn.getDataType() == DbConstants.CHAR_DATA_TYPE) {
+                    if (order.get(curCol) == DbConstants.DESC_COL) {
+                        sb.append(StringUtils.rightPad(DbUtil.complementString(indexKeyValues.get(curCol)), colDefn.getDataLength()));
+                    } else {
+                        sb.append(StringUtils.rightPad(indexKeyValues.get(curCol), colDefn.getDataLength()));
+                    }
+                } else {
+                    if (order.get(curCol) == DbConstants.DESC_COL) {
+                        sb.append(StringUtils.leftPad(DbUtil.complementInteger(indexKeyValues.get(curCol)), colDefn.getDataLength(), "0"));
+                    } else {
+                        sb.append(StringUtils.leftPad(indexKeyValues.get(curCol), colDefn.getDataLength(), "0"));
+                    }
+                }
+                curCol++;
+            }
+            return sb.toString();
         }
     }
 
