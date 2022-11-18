@@ -37,15 +37,24 @@ public class DbUtil {
             }
             return fileLines;
         } catch (Exception e) {
-            System.out.println("There was an error reading the file");
+            System.out.println("There was an error reading the file "+ filePath + ":"+ e);
             return null;
         }
     }
 
     protected static void formatTable(List<List<String>> arr) {
+        int[] lengths = new int[arr.get(0).size()];
+        
+        for (Integer i=0; i<arr.size(); i++) {
+            for(Integer j=0; j<arr.get(i).size(); j++){
+                lengths[j] = Math.max(lengths[j], arr.get(i).get(j).length());
+            }
+        }
+        Integer i = 0;
         for (List<String> row : arr) {
+            i=0;
             for (String val : row) {
-                System.out.print(centerString(20, val) + "|");
+                System.out.print(centerString(lengths[i++], val) + "|");
             }
             System.out.print("\n");
         }
@@ -78,17 +87,12 @@ public class DbUtil {
     }
 
     public static String preprocessSql(String sql) {
-        sql = sql.replaceAll("1", "_1");
-        sql = sql.replaceAll("2", "_2");
-        sql = sql.replaceAll("3", "_3");
-        sql = sql.replaceAll("4", "_4");
-        sql = sql.replaceAll("5", "_5");
+        sql = sql.replaceAll("(T[0-9]+\\.)([0-9])+", "$1_$2");
+        sql = sql.replaceAll("([0-9]+[ADad])", "_$1");
         return sql;
     }
 
     public static void postprocessSql(CreateIndex ci) {
-        ci.getTable().setName(ci.getTable().getName().replace("_", ""));
-        ci.getIndex().setName(ci.getIndex().getName().replace("_", ""));
         List<String> finalColumnNames = new ArrayList<String>();
         for (String colName : ci.getIndex().getColumnsNames()) {
             finalColumnNames.add(colName.replace("_", ""));
@@ -143,9 +147,13 @@ public class DbUtil {
         } else if (ex instanceof Column) {
             Column col = (Column) ex;
             col.setColumnName(col.getColumnName().replace("_", ""));
-            if (col.getTable() != null) {
-                col.getTable().setName(col.getTable().getName().replace("_", ""));
+        } else if (ex instanceof InExpression) {
+            InExpression in = (InExpression) ex;
+            recursiveProcessing(in.getLeftExpression());
+            for(Expression expr : ((ExpressionList)in.getRightItemsList()).getExpressions()){
+                recursiveProcessing(expr);
             }
+            //recursiveProcessing(in.getRightExpression());
         } else {
             System.out.println("==============Instance of============" + ex.getClass());
             return;

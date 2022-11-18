@@ -36,6 +36,14 @@ public class DbIndex {
         generateIndexEntries(tableName, columns);
     }
 
+    protected String getHighKey() {
+        return this.indexData.get(this.indexData.size() - 1).getKey();
+    }
+
+    protected String getLowKey() {
+        return this.indexData.get(0).getKey();
+    }
+
     protected List<DbIndexEntry> getIndexData() {
         return this.indexData;
     }
@@ -95,7 +103,7 @@ public class DbIndex {
             public int compare(final DbIndexEntry lhs, DbIndexEntry rhs) {
                 if (lhs.getKey().compareTo(rhs.getKey()) > 0) {
                     return 1;
-                } else if (lhs.getKey().compareTo(rhs.getKey()) < 0) {
+                } else if (lhs.getKey().toUpperCase().compareTo(rhs.getKey().toUpperCase()) < 0) {
                     return -1;
                 } else {
                     return 0;
@@ -140,16 +148,12 @@ public class DbIndex {
         }
     }
 
-    protected Integer getRowLocation() {
-        return 0;
-    }
-
-    protected static void getAllIndexes(String tableName) {
+    protected static void getAllIndexes(String tableName, Boolean showHighLowKey) {
         File folder = new File(DbConstants.DB_INDEXES_DIR_PATH);
         File[] listOfFiles = folder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith(".idx") && name.startsWith(tableName);
+                return name.endsWith(DbConstants.DB_INDEX_FILE_EXT) && name.matches("(" + tableName + ").*");
             }
         });
 
@@ -157,16 +161,24 @@ public class DbIndex {
         indexTable.add(new ArrayList<>(List.of("Index Name")));
 
         // TODO: No need to read data. Just column definition
-        DbTable tab = new DbTable(tableName);
-        for (Integer i = 1; i <= tab.getNumColumns(); i++) {
+        //DbTable tab = new DbTable(tableName);
+        for (Integer i = 1; i <= DbConstants.MAX_COLUMNS; i++) {
             indexTable.get(0).add(i.toString() + (i == 1 ? "st" : i == 2 ? "nd" : i == 3 ? "rd" : "th") + " Column");
+        }
+        if (showHighLowKey) {
+            indexTable.get(0).add("High Key");
+            indexTable.get(0).add("Low Key");
         }
         int j = 1;
         for (File file : listOfFiles) {
-            DbIndex idx = new DbIndex(file.getName().replace(".idx", ""));
+            DbIndex idx = new DbIndex(file.getName().replace(DbConstants.DB_INDEX_FILE_EXT, ""));
             indexTable.add(new ArrayList<>(List.of(idx.getIndexName())));
-            for (Integer i = 1; i <= tab.getNumColumns(); i++) {
+            for (Integer i = 1; i <= DbConstants.MAX_COLUMNS; i++) {
                 indexTable.get(j).add(idx.getIndexColumnOrder(i) != null ? (i.toString() + idx.getIndexColumnOrder(i)) : "-");
+            }
+            if (showHighLowKey) {
+                indexTable.get(j).add(idx.getHighKey());
+                indexTable.get(j).add(idx.getLowKey());
             }
             j++;
         }

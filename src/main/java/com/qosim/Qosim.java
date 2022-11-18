@@ -40,8 +40,10 @@ public class Qosim {
                         break;
                     case "Select":
                         PlainSelect sel = (PlainSelect) ((Select) stmt).getSelectBody();
+                        System.out.println("Before PostProcess: "+sel);
                         DbUtil.postprocessSql(sel);
-                        System.out.println("after post process"+ sel.getSelectItems());
+                        System.out.println("After PostProcess: "+sel);
+                        DbQueryPlanGenerator.generatePlan(sel);
                         break;
                     case "Drop":
                         Drop drop = (Drop) stmt;
@@ -53,13 +55,13 @@ public class Qosim {
             } catch (JSQLParserException pex) {
                 if (sql.toUpperCase().startsWith("LIST INDEX")) {
                     String tableName = sql.split(" ")[2].replace("_", "");
-                    DbIndex.getAllIndexes(tableName);
+                    DbIndex.getAllIndexes(tableName, false);
                 }
             } catch (Exception e) {
                 throw e;
             }
+            System.out.println("==========================================================================================================================");
         }
-
     }
 
     protected static void dropIndex(Drop drop) {
