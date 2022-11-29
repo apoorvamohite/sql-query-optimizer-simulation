@@ -115,6 +115,8 @@ public class DbUtil {
         // Predicates
         if (sel.getWhere() != null) {
             Expression ex = sel.getWhere();
+//            System.out.println(ex.getClass());
+//            System.out.println(((AndExpression)ex).getLeftExpression() +"   "+((AndExpression)ex).getRightExpression());
             recursiveProcessing(ex);
         }
     }
@@ -126,12 +128,21 @@ public class DbUtil {
             recursiveProcessing(and.getRightExpression());
         } else if (ex instanceof OrExpression) {
             OrExpression or = (OrExpression) ex;
+            System.out.println("==============OR EXPRESSION============" + or);
             recursiveProcessing(or.getLeftExpression());
             recursiveProcessing(or.getRightExpression());
         } else if (ex instanceof EqualsTo) {
             EqualsTo eq = (EqualsTo) ex;
             recursiveProcessing(eq.getLeftExpression());
             recursiveProcessing(eq.getRightExpression());
+        } else if (ex instanceof GreaterThan) {
+            GreaterThan gt = (GreaterThan) ex;
+            recursiveProcessing(gt.getLeftExpression());
+            recursiveProcessing(gt.getRightExpression());
+        } else if (ex instanceof MinorThan) {
+            MinorThan mt = (MinorThan) ex;
+            recursiveProcessing(mt.getLeftExpression());
+            recursiveProcessing(mt.getRightExpression());
         } else if (ex instanceof Column) {
             Column col = (Column) ex;
             col.setColumnName(col.getColumnName().replace("_", ""));

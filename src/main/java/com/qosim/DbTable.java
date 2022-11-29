@@ -37,6 +37,10 @@ public class DbTable {
         return numColumns;
     }
     
+    protected String getTableName(){
+        return tableName;
+    }
+    
     protected Integer getNumRows(){
         return numRows;
     }
@@ -58,6 +62,7 @@ public class DbTable {
     }
     
     private void readTableFromFile(String fileName, Boolean statisticsOnly){
+        tableName = fileName;
         columnType = new ArrayList<Character>();
         columnLength = new ArrayList<Integer>();
         columnCardinality = new ArrayList<Integer>();

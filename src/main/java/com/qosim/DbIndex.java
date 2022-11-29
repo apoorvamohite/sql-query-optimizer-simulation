@@ -51,6 +51,10 @@ public class DbIndex {
     protected List<Integer> getIndexColumns() {
         return this.indexColumns;
     }
+    
+    protected Integer getIndexColumn(Integer i) {
+        return this.indexColumns.get(i-1);
+    }
 
     protected List<Character> getIndexColumnOrder() {
         return this.indexColumnOrder;
@@ -175,7 +179,7 @@ public class DbIndex {
             DbIndex idx = new DbIndex(file.getName().replace(DbConstants.DB_INDEX_FILE_EXT, ""));
             indexTable.add(new ArrayList<>(List.of(idx.getIndexName())));
             for (Integer i = 1; i <= DbConstants.MAX_COLUMNS; i++) {
-                indexTable.get(j).add(idx.getIndexColumnOrder(i) != null ? (i.toString() + idx.getIndexColumnOrder(i)) : "-");
+                indexTable.get(j).add(idx.getIndexColumnOrder(i) != null ? (idx.getIndexColumn(i).toString() + idx.getIndexColumnOrder(i).toString()) : "-");
             }
             if (showHighLowKey) {
                 indexTable.get(j).add(idx.getHighKey());
