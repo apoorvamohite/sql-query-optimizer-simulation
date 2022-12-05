@@ -40,9 +40,7 @@ public class Qosim {
                         break;
                     case "Select":
                         PlainSelect sel = (PlainSelect) ((Select) stmt).getSelectBody();
-                        System.out.println("Before PostProcess: "+sel);
                         DbUtil.postprocessSql(sel);
-                        System.out.println("After PostProcess: "+sel);
                         DbQueryPlanGenerator.generatePlan(sel);
                         break;
                     case "Drop":
@@ -50,7 +48,7 @@ public class Qosim {
                         dropIndex(drop);
                         break;
                     default:
-                        System.out.println("this is default");
+                        System.out.println("Cannot process this command");
                 }
             } catch (JSQLParserException pex) {
                 if (sql.toUpperCase().startsWith("LIST INDEX")) {

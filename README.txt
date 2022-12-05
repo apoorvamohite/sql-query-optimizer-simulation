@@ -1,5 +1,9 @@
 1. Unzip the file.
-2. A sample T1.tab file is present in the dbdata/tables directory.
-2. Run the following commands:
-   cd target
-3. java -jar db.jar "path/to/commands.txt"
+2. A few sample table files are present in the dbdata/tables directory.
+2. Run the following command to create an alias:
+   alias java="java -jar"
+
+3. java db "Absolute/path/to/commands.txt"
+
+4. After you are done with testing, reset the alias using
+   alias java="java"

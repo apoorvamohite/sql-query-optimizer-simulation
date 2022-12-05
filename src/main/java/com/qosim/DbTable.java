@@ -24,6 +24,8 @@ public class DbTable {
     private Integer numRows;
     private Map<Integer, List> data;
     private Map<Integer, ColumnDefinition> columnDefn;
+    private List<Integer> columnHighKey;
+    private List<Integer> columnLowKey;
     
     protected DbTable(String fileName){
         readTableFromFile(fileName, false);
@@ -35,6 +37,14 @@ public class DbTable {
     
     protected Integer getNumColumns(){
         return numColumns;
+    }
+    
+    protected Integer getHighKey(Integer column){
+        return this.columnHighKey.get(column -1);
+    }
+    
+    protected Integer getLowKey(Integer column){
+        return this.columnLowKey.get(column -1);
     }
     
     protected String getTableName(){
@@ -68,6 +78,8 @@ public class DbTable {
         columnCardinality = new ArrayList<Integer>();
         data = new HashMap<Integer, List>();
         columnDefn = new HashMap<Integer, ColumnDefinition>();
+        columnHighKey = new ArrayList<Integer>();
+        columnLowKey = new ArrayList<Integer>();
         
         List<String> lines = DbUtil.readFileLines(DbConstants.DB_TABLES_DIR_PATH + fileName + ".tab");
         Integer columnNo = 1;
@@ -98,10 +110,13 @@ public class DbTable {
         // Read numRows
         numRows = Integer.parseInt(lines.get(2));
         
-        if(statisticsOnly){
-            return;
+//        if(statisticsOnly){
+//            return;
+//        }
+        for(Integer c=0; c<numColumns; c++){
+            columnHighKey.add(0);
+            columnLowKey.add(999999999);
         }
-        
         for(Integer i = 0; i<numRows; i++){
             String dataRow = lines.get(i+3);
             Integer lastColumnEnd = 0;
@@ -110,8 +125,13 @@ public class DbTable {
                 lastColumnEnd += columnLength.get(curColumn);
                 if(columnType.get(curColumn) == DbConstants.CHAR_DATA_TYPE){
                     data.get(curColumn+1).add(s);
+                    columnHighKey.set(curColumn, -1);
+                    columnLowKey.set(curColumn, -1);
                 } else if(columnType.get(curColumn) == DbConstants.INT_DATA_TYPE){
-                    data.get(curColumn+1).add(Integer.parseInt(s));
+                    Integer intVal = Integer.parseInt(s);
+                    data.get(curColumn+1).add(intVal);
+                    columnHighKey.set(curColumn, Math.max(columnHighKey.get(curColumn), intVal));
+                    columnLowKey.set(curColumn, Math.min(columnLowKey.get(curColumn), intVal));
                 }
             }
         }

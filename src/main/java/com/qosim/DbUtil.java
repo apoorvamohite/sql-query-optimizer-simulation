@@ -64,7 +64,14 @@ public class DbUtil {
     public static String complementString(String str) {
         StringBuilder sb = new StringBuilder();
         for (Character c : str.toCharArray()) {
-            sb.append((char) (127 - c));
+            int cInt = c;
+            char finalC;
+            if(cInt>=65 && cInt<=90){
+                finalC = (char)(91 - (cInt - 64));
+            } else {
+                finalC = (char)(123 - (cInt - 96));
+            }
+            sb.append(finalC);
         }
         return sb.toString();
     }
@@ -77,6 +84,7 @@ public class DbUtil {
     public static String preprocessSql(String sql) {
         sql = sql.replaceAll("(T[0-9]+\\.)([0-9])+", "$1_$2");
         sql = sql.replaceAll("([0-9]+[ADad])", "_$1");
+        sql = sql.replaceAll(" D ?", " DESC");
         return sql;
     }
 
@@ -115,9 +123,13 @@ public class DbUtil {
         // Predicates
         if (sel.getWhere() != null) {
             Expression ex = sel.getWhere();
-//            System.out.println(ex.getClass());
-//            System.out.println(((AndExpression)ex).getLeftExpression() +"   "+((AndExpression)ex).getRightExpression());
             recursiveProcessing(ex);
+        }
+        if(sel.getOrderByElements()!=null) {
+            for(OrderByElement obe: sel.getOrderByElements()){
+                Column col = (Column)obe.getExpression();
+                col.setColumnName(col.getColumnName().replace("_", ""));
+            }
         }
     }
 
@@ -128,7 +140,6 @@ public class DbUtil {
             recursiveProcessing(and.getRightExpression());
         } else if (ex instanceof OrExpression) {
             OrExpression or = (OrExpression) ex;
-            System.out.println("==============OR EXPRESSION============" + or);
             recursiveProcessing(or.getLeftExpression());
             recursiveProcessing(or.getRightExpression());
         } else if (ex instanceof EqualsTo) {
@@ -154,7 +165,6 @@ public class DbUtil {
             }
             //recursiveProcessing(in.getRightExpression());
         } else {
-            System.out.println("==============Instance of============" + ex.getClass());
             return;
         }
     }

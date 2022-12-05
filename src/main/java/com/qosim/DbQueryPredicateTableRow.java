@@ -53,7 +53,15 @@ public class DbQueryPredicateTableRow {
             this.PredicateNum = "PredNo"+predicateNum;
             this.Type = 'R';
             this.ColumnCardinality1 = tableStats.getColumnCardinality(Integer.parseInt(((Column)eq.getLeftExpression()).getColumnName()));
-            this.FilterFactor1 = 1.0/this.ColumnCardinality1;
+            Integer value = Integer.parseInt(((LongValue)eq.getRightExpression()).getStringValue());
+            Integer columnNumber = Integer.parseInt(((Column)eq.getLeftExpression()).getColumnName());
+            Double highKey = tableStats.getHighKey(columnNumber).doubleValue();
+            Double lowKey = tableStats.getLowKey(columnNumber).doubleValue();
+            if(value.doubleValue()<lowKey || value.doubleValue()>highKey){
+                this.FilterFactor1 = 1.0;
+            } else {
+                this.FilterFactor1 = (highKey - value.doubleValue())/(highKey - lowKey + 1.0);
+            }
             this.Text = eq.toString();
             this.Table1 = ((Column)eq.getLeftExpression()).getTable().getName();
         } else if(ex instanceof MinorThan){
@@ -62,7 +70,15 @@ public class DbQueryPredicateTableRow {
             this.PredicateNum = "PredNo"+predicateNum;
             this.Type = 'R';
             this.ColumnCardinality1 = tableStats.getColumnCardinality(Integer.parseInt(((Column)eq.getLeftExpression()).getColumnName()));
-            this.FilterFactor1 = 1.0/this.ColumnCardinality1;
+            Integer value = Integer.parseInt(((LongValue)eq.getRightExpression()).getStringValue());
+            Integer columnNumber = Integer.parseInt(((Column)eq.getLeftExpression()).getColumnName());
+            Double highKey = tableStats.getHighKey(columnNumber).doubleValue();
+            Double lowKey = tableStats.getLowKey(columnNumber).doubleValue();
+            if(value.doubleValue()<lowKey || value.doubleValue()>highKey){
+                this.FilterFactor1 = 1.0;
+            } else {
+                this.FilterFactor1 = (value.doubleValue() - lowKey)/(highKey - lowKey + 1.0);
+            }
             this.Text = eq.toString();
             this.Table1 = ((Column)eq.getLeftExpression()).getTable().getName();
         } else if(ex instanceof OrExpression){
@@ -71,12 +87,18 @@ public class DbQueryPredicateTableRow {
             this.PredicateNum = "PredNo"+predicateNum;
             this.Type = 'I';
             this.ColumnCardinality1 = tableStats.getColumnCardinality(Integer.parseInt(((Column)((EqualsTo)or.getRightExpression()).getLeftExpression()).getColumnName()));
-            //this.ColumnCardinality2 = table2Stats.getColumnCardinality(Integer.parseInt(((Column)or.getRightExpression()).getColumnName()));
-            //this.FilterFactor1 = 1.0/this.ColumnCardinality1;
             this.FilterFactor1 = (double)calculateInListFF(or)/this.ColumnCardinality1;
-            //this.FilterFactor2 = 1/this.ColumnCardinality2;
             this.Text = or.toString();
             this.Table1 = ((Column)((EqualsTo)or.getRightExpression()).getLeftExpression()).getTable().getName();
+        } else if(ex instanceof InExpression){
+            InExpression in = (InExpression) ex;
+            this.predicate = in;
+            this.PredicateNum = "PredNo"+predicateNum;
+            this.Type = 'I';
+            this.Text = in.toString();
+            this.Table1 = ((Column)in.getLeftExpression()).getTable().getName();
+            this.ColumnCardinality1 = tableStats.getColumnCardinality(Integer.parseInt(((Column)in.getLeftExpression()).getColumnName()));
+            this.FilterFactor1 = ((double)(((ExpressionList)in.getRightItemsList()).getExpressions().size()))/this.ColumnCardinality1;
         }
     }
     
